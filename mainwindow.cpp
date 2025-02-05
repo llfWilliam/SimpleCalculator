@@ -28,17 +28,15 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->Button7, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
     connect(ui->Button8, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
     connect(ui->Button9, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
-    // 连接运算符按钮
     connect(ui->ButtonAdd, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
     connect(ui->ButtonMinus, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
     connect(ui->ButtonMultiple, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
     connect(ui->ButtonDivide, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
-    // 连接其他按钮
     connect(ui->ButtonClear, &QPushButton::clicked, this, &MainWindow::onButtonClearPressed);
     connect(ui->ButtonEqual, &QPushButton::clicked, this, &MainWindow::onButtonEqualsPressed);
     connect(ui->ButtonBackSpace, &QPushButton::clicked, this, &MainWindow::onButtonBackspacePressed);
     connect(ui->ButtonClearAll, &QPushButton::clicked, this, &MainWindow::onButtonClearAllPressed);
-
+//----------------------------------------------------------------------------------------将ui下的按扭的信号和mainwindow的函数进行链接
 }
 
 
@@ -63,80 +61,91 @@ void MainWindow::onButtonClearPressed()
     ui->resultDisplay->clear();
 }
 double calculate(const QVector<double>& numbers, const QVector<char>& operators) {
-    double result = numbers[0];
-    for (size_t i = 1; i < numbers.size(); ++i) {
-        switch (operators[i - 1]) {
-            case '+':
-                result += numbers[i];
-                break;
-            case '-':
-                result -= numbers[i];
-                break;
-            case '*':
-                result *= numbers[i];
-                break;
-            case '/':
-                if (numbers[i] == 0) {
-                    return -1; // Indicate error
+    QVector<double> finalNumbers = numbers;      //---------------------------------------最终的数字数组
+    QVector<char> finalOperators = operators;    //---------------------------------------最终的运算符数组
+                                                 //---------------------------------------处理乘除运算：先处理乘除，再处理加减
+    for (int i = 0; i < finalOperators.size(); ++i) {
+        if (finalOperators[i] == '*' || finalOperators[i] == '/') {
+                                                 //---------------------------------------对于乘除操作，执行运算并将结果替换
+            if (finalOperators[i] == '*') {
+                finalNumbers[i] = finalNumbers[i] * finalNumbers[i + 1];//----------------将乘号左右的数字都算出结果并替换左边的数字
+            } else if (finalOperators[i] == '/') {
+                if (finalNumbers[i + 1] == 0) {
+                    return -10086;  //----------------------------------------------------除零错误
                 }
-                result /= numbers[i];
-                break;
-            default:
-                return -1; // Indicate error
+                finalNumbers[i] = finalNumbers[i] / finalNumbers[i + 1];
+            }
+            finalNumbers.remove(i + 1);//-------------------------------------------------删除当前乘除符号后面的数字，因为它已经被计算了
+            finalOperators.remove(i);//---------------------------------------------------删除符号
+            i--;  //----------------------------------------------------------------------重新检查当前位置的运算符
         }
     }
+
+    // 处理加减运算
+    double result = finalNumbers[0];
+    for (int i = 1; i < finalNumbers.size(); ++i) {
+        switch (finalOperators[i - 1]) {
+            case '+':
+                result += finalNumbers[i];
+                break;
+            case '-':
+                result -= finalNumbers[i];
+                break;
+            default:
+                return -10086;  // 无效操作
+        }
+    }
+
     return result;
 }
 
 void MainWindow::onButtonEqualsPressed()
 {
-    QString input = ui->resultDisplay->text(); // Get input from line edit
-    QVector<double> numbers;//-----------------------------------------------------------创建动态数组number。Qvector是动态数组，double是类型，
-    QVector<char> operators;
-    QString currentNumberStr; //---------------------------------------------------------作为暂存的数字字符串
+    QString input = ui->resultDisplay->text(); // 获取输入
+    QVector<double> numbers;                    // 存储数字
+    QVector<char> operators;                   // 存储运算符
+    QString currentNumberStr;                   // 存储暂存数字
 
     for (int i = 0; i < input.length(); ++i) {
         QChar ch = input[i];
-        if (ch.isDigit()) { //-----------------------------------------------------------如果是数字的话
-            currentNumberStr += ch; //---------------------------------------------------直接把现在的字符串加到数字字符串后面
+        if (ch.isDigit() || ch == '.') {  // 数字和小数点
+            currentNumberStr += ch; // 拼接当前的数字
         } else if (ch == '+' || ch == '-' || ch == '*' || ch == '/') {
             if (!currentNumberStr.isEmpty()) {
-                numbers.append(currentNumberStr.toDouble()); //--------------------------如果碰到了运算符，并且当前暂存数组不为空，那么先进行强制类型转换，并且将他添加到number容器的末尾
-                currentNumberStr.clear(); //---------------------------------------------清空当前暂存数组为下一个数字做准备
+                numbers.append(currentNumberStr.toDouble()); // 数字转double并添加到数组
+                currentNumberStr.clear();  // 清空当前数字暂存区
             }
-            operators.append(ch.toLatin1()); //------------------------------------------把运算符强制类型转换为Latin并加到运算符数组最后
+            operators.append(ch.toLatin1()); // 添加运算符
         } else {
-            QMessageBox::critical(this, "Error", "Invalid character in expression!");//--无效输入弹窗
+            QMessageBox::critical(this, "警告", "你写了一堆什么东西"); // 弹窗提示非法字符
             return;
         }
     }
+
     if (!currentNumberStr.isEmpty()) {
-        numbers.append(currentNumberStr.toDouble());//-----------------------------------把最后的数字加入到数组里
+        numbers.append(currentNumberStr.toDouble()); // 添加最后一个数字
     }
 
-    double result = calculate(numbers, operators);
-    if (result != -1) {
-        ui->resultDisplay->setText(QString::number(result)); // Display the result
+    double result = calculate(numbers, operators); // 调用calculate计算结果
+
+    if (result != -10086) {
+        ui->resultDisplay->setText(QString::number(result)); // 显示结果
     } else {
-        QMessageBox::critical(this, "Error", "Division by zero or unknown operator!");
+        QMessageBox::critical(this, "警告", "除数为零或非法输入");
     }
 }
-
 
 void MainWindow::onButtonBackspacePressed()
 {
     QString text = ui->resultDisplay->text();
     if (!text.isEmpty())
     {
-        text.chop(1);  // 删除最后一个字符
-        ui->resultDisplay->setText(text);
+        text.chop(1);//------------------------------------------------------------------删除一个字符
+        ui->resultDisplay->setText(text);//----------------------------------------------把删掉以后的文本放上去
     }
 }
 
 void MainWindow::onButtonClearAllPressed()
 {
-    ui->resultDisplay->clear();
+    ui->resultDisplay->clear();//--------------------------------------------------------清空文本
 }
-
-
-
