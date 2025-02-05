@@ -24,7 +24,7 @@
      </rect>
     </property>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>450</x>
@@ -66,7 +66,7 @@
          <item>
           <widget class="QPushButton" name="ButtonDivide">
            <property name="text">
-            <string>\</string>
+            <string>/</string>
            </property>
           </widget>
          </item>
@@ -112,7 +112,7 @@
      </item>
     </layout>
    </widget>
-   <widget class="QWidget" name="">
+   <widget class="QWidget" name="layoutWidget">
     <property name="geometry">
      <rect>
       <x>140</x>
