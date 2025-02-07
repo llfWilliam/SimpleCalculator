@@ -1,8 +1,6 @@
 #include "mainwindow.h"
 #include "ui_mainwindow.h"
 #include <QLineEdit>
-#include <QRegExpValidator>
-#include <QRegExp>
 #include <QDoubleValidator>
 #include <QValidator>
 #include <QMessageBox>
@@ -11,7 +9,6 @@
 #include <QVariant>
 #include <QString>
 #include <cmath>
-#include <limits>
 #include <QDebug>
 MainWindow::MainWindow(QWidget *parent) :
     QMainWindow(parent),
@@ -103,31 +100,47 @@ void MainWindow::onButtonEqualsPressed()
 {
     QString input = ui->resultDisplay->text(); // 获取输入
     QVector<double> numbers;                    // 存储数字
-    QVector<char> operators;                   // 存储运算符
+    QVector<char> operators;                    // 存储运算符
     QString currentNumberStr;                   // 存储暂存数字
 
     for (int i = 0; i < input.length(); ++i) {
         QChar ch = input[i];
-        if (ch.isDigit() || ch == '.') {  // 数字和小数点
-            currentNumberStr += ch; // 拼接当前的数字
-        } else if (ch == '+' || ch == '-' || ch == '*' || ch == '/') {
-            if (!currentNumberStr.isEmpty()) {
-                numbers.append(currentNumberStr.toDouble()); // 数字转double并添加到数组
-                currentNumberStr.clear();  // 清空当前数字暂存区
+        // 如果是数字或小数点，直接拼接到当前数字字符串中
+        if (ch.isDigit() || ch == '.') {
+            currentNumberStr += ch;
+        }
+        // 如果是运算符
+        else if (ch == '+' || ch == '-' || ch == '*' || ch == '/') {
+            // 检测连续运算符：如果当前运算符后面还有字符且下一个字符也是运算符，则弹出警告
+            if (i + 1 < input.length()) {
+                QChar nextChar = input[i + 1];
+                if (nextChar == '+' || nextChar == '-' || nextChar == '*' || nextChar == '/') {
+                    QMessageBox::critical(this, "警告", "连续运算符不合法！");
+                    return;
+                }
             }
-            operators.append(ch.toLatin1()); // 添加运算符
-        } else {
-            QMessageBox::critical(this, "警告", "你写了一堆什么东西"); // 弹窗提示非法字符
+            // 如果当前数字字符串不为空，则先将数字转换为 double 添加到 numbers 中
+            if (!currentNumberStr.isEmpty()) {
+                numbers.append(currentNumberStr.toDouble());
+                currentNumberStr.clear();
+            }
+            // 添加运算符到 operators 数组
+            operators.append(ch.toLatin1());
+        }
+        // 非法字符，直接弹出警告
+        else {
+            QMessageBox::critical(this, "警告", "你写了一堆什么东西");
             return;
         }
     }
 
+    // 如果最后还有剩余的数字字符串，转换并添加到 numbers 中
     if (!currentNumberStr.isEmpty()) {
-        numbers.append(currentNumberStr.toDouble()); // 添加最后一个数字
+        numbers.append(currentNumberStr.toDouble());
     }
 
-    double result = calculate(numbers, operators); // 调用calculate计算结果
-
+    // 调用 calculate 计算结果
+    double result = calculate(numbers, operators);
     if (result != -10086) {
         ui->resultDisplay->setText(QString::number(result)); // 显示结果
     } else {
