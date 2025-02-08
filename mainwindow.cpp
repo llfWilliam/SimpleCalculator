@@ -25,6 +25,7 @@ MainWindow::MainWindow(QWidget *parent) :
     connect(ui->Button7, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
     connect(ui->Button8, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
     connect(ui->Button9, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
+    connect(ui->Button10, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
     connect(ui->ButtonAdd, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
     connect(ui->ButtonMinus, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
     connect(ui->ButtonMultiple, &QPushButton::clicked, this, &MainWindow::onButtonPressed);
@@ -140,6 +141,10 @@ void MainWindow::onButtonEqualsPressed()
     }
 
     // 调用 calculate 计算结果
+    // **修复崩溃问题**，防止 `numbers.size() == 1 && operators.isEmpty()` 进入计算
+    if (numbers.size() == 1 && operators.isEmpty()) {
+        return;  // 避免重复计算已得出的结果
+    }
     double result = calculate(numbers, operators);
     if (result != -10086) {
         ui->resultDisplay->setText(QString::number(result)); // 显示结果
