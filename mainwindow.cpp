@@ -145,6 +145,9 @@ void MainWindow::onButtonEqualsPressed()
     if (numbers.size() == 1 && operators.isEmpty()) {
         return;  // 避免重复计算已得出的结果
     }
+    if (operators.size() == 1 && numbers.isEmpty()) {
+        return;  // 避免非法输入直接崩溃
+    }
     double result = calculate(numbers, operators);
     if (result != -10086) {
         ui->resultDisplay->setText(QString::number(result)); // 显示结果
