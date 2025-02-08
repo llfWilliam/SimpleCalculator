@@ -61,6 +61,12 @@ void MainWindow::onButtonClearPressed()
 double calculate(const QVector<double>& numbers, const QVector<char>& operators) {
     QVector<double> finalNumbers = numbers;      //---------------------------------------最终的数字数组
     QVector<char> finalOperators = operators;    //---------------------------------------最终的运算符数组
+    if (finalOperators.isEmpty() && finalNumbers.size() == 1) {
+        return finalNumbers[0];
+    }
+    if (finalOperators.size() >= finalNumbers.size()) {
+        return -10086;  // 非法输入，防止越界
+    }
                                                  //---------------------------------------处理乘除运算：先处理乘除，再处理加减
     for (int i = 0; i < finalOperators.size(); ++i) {
         if (finalOperators[i] == '*' || finalOperators[i] == '/') {
@@ -113,6 +119,10 @@ void MainWindow::onButtonEqualsPressed()
         // 如果是运算符
         else if (ch == '+' || ch == '-' || ch == '*' || ch == '/') {
             // 检测连续运算符：如果当前运算符后面还有字符且下一个字符也是运算符，则弹出警告
+            if (i == 0) {  // **检测首位是运算符**
+                QMessageBox::critical(this, "警告", "表达式格式错误，不能以运算符开头！");
+                return;
+            }
             if (i + 1 < input.length()) {
                 QChar nextChar = input[i + 1];
                 if (nextChar == '+' || nextChar == '-' || nextChar == '*' || nextChar == '/') {
@@ -145,8 +155,12 @@ void MainWindow::onButtonEqualsPressed()
     if (numbers.size() == 1 && operators.isEmpty()) {
         return;  // 避免重复计算已得出的结果
     }
-    if (operators.size() == 1 && numbers.isEmpty()) {
-        return;  // 避免非法输入直接崩溃
+    if (numbers.isEmpty() && !operators.isEmpty()) {
+        QMessageBox::critical(this, "警告", "表达式格式错误，不能以运算符开头！");
+        return;
+    }
+    if (operators.isEmpty() && numbers.isEmpty()) {
+        return;  // 避免空值崩溃
     }
     double result = calculate(numbers, operators);
     if (result != -10086) {
